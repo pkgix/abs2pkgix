@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+ABS2PKGIX_ROOT="$(cd "${0%/*}/.." && pwd)"
+PYTHONPATH="${PYTHONPATH}:${ABS2PKGIX_ROOT}/lib/python:${ABS2PKGIX_ROOT}/deps/bottle"
+
+export ABS2PKGIX_ROOT
+export PYTHONPATH
+exec "${ABS2PKGIX_ROOT}/lib/python/abs2pkgix/main.py" "$@"
