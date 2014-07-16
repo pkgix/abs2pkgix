@@ -21,6 +21,6 @@ build_wrap_ldflags() {
 if (( ${PKGIX_PARALLEL_BUILD:-0} )); then
 	_make="$(which make)"
 	make() {
-		$_make -j $(nproc) "$@"
+		$_make -j ${PKGIX_PARALLEL_BUILD:-$(nproc)} "$@"
 	}
 fi

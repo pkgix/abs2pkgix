@@ -19,6 +19,7 @@
 # along with abs2pkgix.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import sys
 import os
 import time
 import bottle
@@ -116,7 +117,8 @@ def index(name):
         "",
         "_isinstalled_list=({})".format(isinstalled_list),
         "source_pkg \".functions/build.sh\" \"${repo}\"",
-        "source_pkg \".functions/wrap.sh\" \"${repo}\""
+        "source_pkg \".functions/wrap.sh\" \"${repo}\"",
+        ""
         ])
 
 @bottle.route('/support/<name>/<filename>')
@@ -132,5 +134,16 @@ def index(name, filename):
 def index(filename):
     return bottle.static_file(filename, root=SCRIPT_PATH)
 
+def main(argv):
+    try:
+        host, port = argv[1].split(":")
+    except:
+        host = 'localhost'
+        port = 8080
+
+    bottle.run(host=host, port=port)
+    return 0
+
 init_pkg_file_list()
-bottle.run(host='localhost', port=8080)
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

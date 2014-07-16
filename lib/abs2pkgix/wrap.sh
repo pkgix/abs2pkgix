@@ -1,6 +1,6 @@
 version="${pkgver}-${pkgrel}"
-website="${url}"
-description="${pkgdesc}"
+website="${url:-}"
+description="${pkgdesc:-}"
 
 builddepends=("${makedepends[@]:+${makedepends[@]}}")
 for optdepend in "${optdepends[@]:+${optdepends[@]}}"; do
