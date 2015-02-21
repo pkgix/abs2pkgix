@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Copyright (C) 2014, Marco Elver <me AT marcoelver.com>
+# Copyright (C) 2014 - 2015, Marco Elver <me AT marcoelver.com>
 #
 # This file is part of abs2pkgix.
 #
@@ -63,22 +63,31 @@ def get_pkgpath(name):
     return pkgpath
 
 def pkg_convert(line):
+    # Rename clashing functions
     rename = ["prepare", "build", "check"]
     if "()" in line:
         if any(line.startswith(x) for x in rename): return "_" + line
 
+    # Rename *sums
     idx = line.find("sums=(")
     if idx > 0:
         which_digest = line[:idx]
         return "_checksums_digest={}\n{}".format(which_digest,
                 line.replace("{}sums=".format(which_digest), "_checksums="))
 
-    build_wrap_ldflags = ["./configure"]
+    # Ensure ./configure has --exec-prefix
+    if line.strip().startswith("./configure"):
+        if "exec-prefix" not in line:
+            line = line.replace("./configure", "./configure --exec-prefix=/usr")
+
+    # Wrap commands that discard environment
+    build_wrap_ldflags = ["/configure "]
     for x in build_wrap_ldflags:
-        if line.strip().startswith(x):
-            line = line.replace(x, "build_wrap_ldflags " + x)
+        if x in line:
+            line = "build_wrap_ldflags \\\n" + line
             break
 
+    # Convert paths to ${prefix} paths
     prefix_ize = ["/usr", "/etc", "/var", "/run", "/opt"]
     for x in prefix_ize:
         if x in line and not line.strip().startswith(x):
@@ -107,10 +116,7 @@ def index(name):
     return "\n".join([
         "# abs2pkgix generated ({})".format(time.strftime("%a %b %d %H:%M:%S %Z %Y")),
         "",
-        "unset pkgver pkgrel url pkgdesc makedepends optdepends",
-        "unset _prepare _build _check",
-        "unset _checksums _checksums_digest _isinstalled_list",
-        "",
+        "source_pkg \".functions/pre_wrap.sh\" \"${repo}\"",
         "#==========[ PKGBUILD ]==========#",
         pkgbuild_content,
         "#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^#",

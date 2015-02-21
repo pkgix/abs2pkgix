@@ -1,12 +1,9 @@
 version="${pkgver}-${pkgrel}"
 website="${url:-}"
 description="${pkgdesc:-}"
+provides+=("${pkgname[@]}")
 
 builddepends=("${makedepends[@]:+${makedepends[@]}}")
-for optdepend in "${optdepends[@]:+${optdepends[@]}}"; do
-	optdepend="${optdepend%%:*}"
-	builddepends+=("$optdepend")
-done
 
 _set_vars() {
 	srcdir="$(pwd)"
@@ -49,7 +46,7 @@ _fetch_sources() {
 	for (( i=0 ; i < ${#source[@]}; ++i )); do
 		url="${source[i]}"
 		checksum="${_checksums[i]}"
-		file_name="${url##*/}"
+		file_name="$(get_fetch_target "$url")"
 
 		if [[ "$file_name" == "$url" ]]; then
 			url="${repo}/../support/${pkgname}/${url}"
@@ -87,11 +84,20 @@ check() {
 
 installenv() {
 	_set_vars
-	package
+
+	type -p package &>/dev/null && package || :
+
+	declare -F | while read line; do
+		read -ra split_line <<< "$line"
+		if [[ "${split_line[2]}" =~ ^package_ ]]; then
+			package_func="${split_line[2]}"
+			_p="${package_func#package_}"
+			msg_printf "installing split %s ...\n" "$_p"
+			$package_func
+		fi
+	done
 }
 
-#checkdepends
-#provides
 #forceinstall
 #postinstall
 #preremove
