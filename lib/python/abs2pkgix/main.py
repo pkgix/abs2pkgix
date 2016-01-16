@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Copyright (C) 2014 - 2015, Marco Elver <me AT marcoelver.com>
+# Copyright (C) 2014-2016, Marco Elver <me AT marcoelver.com>
 #
 # This file is part of abs2pkgix.
 #

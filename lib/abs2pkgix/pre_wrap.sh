@@ -11,3 +11,6 @@ while read line; do
 	fi
 done < <(declare -F)
 
+# Force off nounset, as some PKGBUILDs use undeclared variables.
+set +o nounset
+
