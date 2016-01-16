@@ -9,6 +9,7 @@ Usage:
 .. code:: sh
 
     abs
+    make
     bin/abs2pkgix
 
 Then point pkgix to the repo:
