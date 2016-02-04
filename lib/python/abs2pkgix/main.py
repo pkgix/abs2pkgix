@@ -24,6 +24,7 @@ import os
 import time
 import bottle
 import gzip
+import re
 
 ABS_PATH = "/var/abs"
 REPOS = ["core", "extra", "community"]
@@ -91,7 +92,16 @@ def pkg_convert(line):
     prefix_ize = ["/usr", "/etc", "/var", "/run", "/opt"]
     for x in prefix_ize:
         if x in line and not line.strip().startswith(x):
-            line = line.replace(x, "${prefix}" + x)
+            prepend = "${prefix}"
+
+            # Check if single quoted; if it is, need to unquote to use
+            # ${prefix} variable.
+            single_quoted_all = re.findall(r"'([^']*)'", line)
+            for single_quoted in single_quoted_all:
+                if x in single_quoted:
+                    prepend = "'\"${prefix}\"'"
+
+            line = line.replace(x, prepend + x)
 
     return line
 
