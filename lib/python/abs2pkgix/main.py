@@ -26,6 +26,8 @@ import bottle
 import gzip
 import re
 
+import abs2pkgix.rules as rules
+
 ABS_PATH = "/var/abs"
 REPOS = ["core", "extra", "community"]
 SCRIPT_PATH = os.path.join(os.environ["ABS2PKGIX_ROOT"], "lib", "abs2pkgix")
@@ -63,7 +65,7 @@ def get_pkgpath(name):
 
     return pkgpath
 
-def pkg_convert(line):
+def pkg_convert(pkg_name, line):
     # Rename clashing functions
     rename = ["prepare", "build", "check"]
     if "()" in line:
@@ -81,27 +83,21 @@ def pkg_convert(line):
         if "exec-prefix" not in line:
             line = line.replace("./configure", "./configure --exec-prefix=/usr")
 
-    # Wrap commands that discard environment
-    build_wrap_ldflags = ["/configure "]
-    for x in build_wrap_ldflags:
-        if x in line:
-            line = "build_wrap_ldflags \\\n" + line
-            break
-
     # Convert paths to ${prefix} paths
-    prefix_ize = ["/usr", "/etc", "/var", "/run", "/opt"]
-    for x in prefix_ize:
-        if x in line and not line.strip().startswith(x):
-            prepend = "${prefix}"
+    if rules.prefix_ize(pkg_name, line):
+        prefix_ize = ["/usr", "/etc", "/var", "/run", "/opt"]
+        for x in prefix_ize:
+            if x in line and not line.strip().startswith(x):
+                prepend = "${prefix}"
 
-            # Check if single quoted; if it is, need to unquote to use
-            # ${prefix} variable.
-            single_quoted_all = re.findall(r"'([^']*)'", line)
-            for single_quoted in single_quoted_all:
-                if x in single_quoted:
-                    prepend = "'\"${prefix}\"'"
+                # Check if single quoted; if it is, need to unquote to use
+                # ${prefix} variable.
+                single_quoted_all = re.findall(r"'([^']*)'", line)
+                for single_quoted in single_quoted_all:
+                    if x in single_quoted:
+                        prepend = "'\"${prefix}\"'"
 
-            line = line.replace(x, prepend + x)
+                line = line.replace(x, prepend + x)
 
     return line
 
@@ -117,7 +113,7 @@ def index(name):
         return "version=0\nisinstalled() { return 0; }\n"
 
     with open(os.path.join(pkgpath, "PKGBUILD"), "r") as pkgbuild:
-        pkgbuild_content = "".join(pkg_convert(line) for line in pkgbuild)
+        pkgbuild_content = "".join(pkg_convert(name, line) for line in pkgbuild)
 
     isinstalled_list = " ".join("'{}'".format(path) for \
                                 path in pkg_file_list.get(name, []))

@@ -1,26 +1,24 @@
-##
-# build_set_flags command args...
-# Wraps command and sets LDFLAGS to reflect environment variables set by pkgix,
-# as some linkers do not use LD_RUN_PATH nor LIBRARY_PATH, or they get reset
-# somewhere along the way (makefiles, configure scripts, etc.).
-#
-build_wrap_ldflags() {
+export CPPFLAGS="-D_FORTIFY_SOURCE=2"
+export CFLAGS="-O2 -pipe"
+export CXXFLAGS="-O2 -pipe"
+
+LDFLAGS="-Wl,-rpath=${LD_RUN_PATH}"
+extend_LDFLAGS() {
 	local library_path
-	local ldflags
 	local path
 
 	IFS=: read -ra library_path <<< "$LIBRARY_PATH"
 	for path in "${library_path[@]}"; do
-		ldflags+="-L${path} "
+		LDFLAGS+=" -L${path}"
 	done
-
-	LDFLAGS="${ldflags}-Wl,-rpath=${LD_RUN_PATH} ${LDFLAGS:-}" "$@"
 }
-
+extend_LDFLAGS
+export LDFLAGS
 
 if (( ${PKGIX_PARALLEL_BUILD:-0} )); then
+	MAKEFLAGS="-j${PKGIX_PARALLEL_BUILD}"
 	_make="$(which make)"
 	make() {
-		$_make -j ${PKGIX_PARALLEL_BUILD:-$(nproc)} "$@"
+		$_make $MAKEFLAGS "$@"
 	}
 fi

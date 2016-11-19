@@ -8,6 +8,21 @@ builddepends=("${makedepends[@]:+${makedepends[@]}}")
 _set_vars() {
 	srcdir="$(pwd)"
 	pkgdir="${destdir}"
+
+	# Individual steps in PKGBUILDs can export variables that survive across
+	# steps. Store all exports and reload them in the next step.
+	local exports_file="${srcdir}/.${pkgname}-${version}.abs2pkgix.vars"
+	[[ -f "${exports_file}" ]] && eval "$(< "${exports_file}")" || :
+}
+
+_store_exports() {
+	local exports_file="${srcdir}/.${pkgname}-${version}.abs2pkgix.vars"
+	# Need to rewrite 'declare -x' to 'export' (or declare -gx), as otherwise
+	# the eval above will only be in scope for _set_vars.
+	: > "${exports_file}"
+	declare -x | while read line; do
+		echo "export ${line#declare -x}" >> "${exports_file}"
+	done
 }
 
 isinstalled() {
@@ -43,10 +58,13 @@ _fetch_sources() {
 	local url
 	local checksum
 	local file_name
+	local to_from
 	for (( i=0 ; i < ${#source[@]}; ++i )); do
+		# deal with "<target>::<source-url>" format here
 		url="${source[i]}"
+		file_name="$(get_fetch_target "${url%%::*}")"
+		url="${url##*::}"
 		checksum="${_checksums[i]}"
-		file_name="$(get_fetch_target "$url")"
 
 		if [[ "$file_name" == "$url" ]]; then
 			url="${repo}/../support/${pkgname}/${url}"
@@ -67,13 +85,13 @@ prepare() {
 
 	type -p _prepare &>/dev/null || return 0
 	_set_vars
-	_prepare
+	_prepare && _store_exports
 }
 
 build() {
 	type -p _build &>/dev/null || return 0
 	_set_vars
-	_build
+	_build && _store_exports
 }
 
 check() {
