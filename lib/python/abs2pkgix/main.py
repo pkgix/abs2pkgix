@@ -74,7 +74,7 @@ def pkg_convert(pkg_name, line):
     # Rename *sums
     idx = line.find("sums=(")
     if idx > 0:
-        which_digest = line[:idx]
+        which_digest = line[:idx].strip()
         return "_checksums_digest={}\n{}".format(which_digest,
                 line.replace("{}sums=".format(which_digest), "_checksums="))
 
