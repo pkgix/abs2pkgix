@@ -8,7 +8,7 @@ Usage:
 
 .. code:: sh
 
-    abs
+    abs # Get latest ABS tree
     make
     bin/abs2pkgix
 
@@ -18,3 +18,9 @@ Then point pkgix to the repo:
 
     export PKGIX_REPOS="http://localhost:8080/pkgs"
     # use pkgix
+
+or alternatively:
+
+.. code:: sh
+
+    pkgix -r "http://localhost:8080/pkgs" ...
